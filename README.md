@@ -19,10 +19,12 @@ Running the Tests
 
 The tests are designed to be run from your local computer. The test
 environment requires [Python 2.7+](http://www.python.org/downloads) (but not Python 3.x).
-Leave the default install settings so Python will be installed to the c:\python2x directory.
 
 You will also need a copy of OpenSSL.
-Users on Windows should read the [Windows Notes](#windows-notes) section below.
+
+On Windows, be sure to add the Python directory (`c:\python2x`, by default) to
+your `%Path%` [Environment Variable](http://www.computerhope.com/issues/ch000549.htm),
+and read the [Windows Notes](#windows-notes) section below.
 
 To get the tests running, you need to set up the test domains in your
 [`hosts` file](http://en.wikipedia.org/wiki/Hosts_%28file%29%23Location_in_the_file_system). The
@@ -103,6 +105,11 @@ will be `C:\\OpenSSL-Win32\\bin\\openssl.cfg`).
 
 Be sure to add the Python directory (c:\python2x, by default) to your `%Path%`
 [Environment Variable](http://www.computerhope.com/issues/ch000549.htm).
+
+Alternatively, you may also use
+[Bash on Ubuntu on Windows](https://msdn.microsoft.com/en-us/commandline/wsl/about)
+in the Windows 10 Anniversary Update build, then access your windows
+partition from there to launch wptserve.
 
 Test Runner
 ===========
@@ -238,6 +245,15 @@ We can sometimes take a little while to go through pull requests
 because we have to go through all the tests and ensure that they match
 the specification correctly. But we look at all of them, and take
 everything that we can.
+
+OWNERS files are used only to indicate who should be notified of pull
+requests.  If you are interested in receiving notifications of proposed
+changes to tests in a given directory, feel free to add yourself to the
+OWNERS file. Anyone with expertise in the specification under test can
+approve a pull request.  In particular, if a test change has already
+been adequately reviewed "upstream" in another repository, it can be
+pushed here without any further review by supplying a link to the
+upstream review.
 
 Getting Involved
 ================
