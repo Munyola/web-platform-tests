@@ -3,7 +3,6 @@ import pytest
 from tests.support.asserts import assert_same_element
 from tests.support.inline import inline
 from webdriver.client import element_key
-import execute_util
 
 # Ported from Mozilla's marionette's test suite.
 
@@ -216,5 +215,3 @@ def test_html_form_controls_collection(session, executor):
     actual = executor(session, "return document.forms[0].elements")
     expected = session.find.css("input")
     assert_elements_equal(session, expected, actual)
-
-
