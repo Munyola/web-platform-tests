@@ -1,7 +1,8 @@
 import pytest
 
 from tests.support.asserts import assert_same_element
-from tests.support.asserts import assert_success
+from tests.support.asserts import assert_success, assert_error
+from tests.support.fixtures import create_dialog
 
 from tests.support.inline import inline
 from webdriver.client import element_key
@@ -44,16 +45,90 @@ def execute_script(session, script, args = []):
 def execute_async_script(session, script, args = []):
     return execute_common(args, generateAsyncScript(script), "async", session)
 
-def execute_common(args, async_script, commandId, session):
+def execute_common(args, script, commandId, session):
     return session.transport.send("POST", "session/{0}/execute/{1}".format(session.session_id, commandId), {
-        'script': async_script,
+        'script': script,
         'args': list(args)})
 
+def dismiss(session):
+    session.transport.send("POST", "session/{0}/alert/dismiss".format(session.session_id))
 
 executors = [
     execute_script,
     execute_async_script
 ]
+
+# 15.2 extract the script arguments from a request
+
+@pytest.mark.parametrize("exec_method", ["sync", "async"])
+def test_request_argument_parsing(session, exec_method):
+    # step 1
+    session.url = inline("""<title>JS testing</title>""")
+    result = session.transport.send("POST", "session/{0}/execute/{1}".format(session.session_id, exec_method), {
+         'script': 1,
+         'args': [2,3]})
+
+    assert_error(result, "invalid argument")
+
+    # step 3
+    result = session.transport.send("POST", "session/{0}/execute/{1}".format(session.session_id, exec_method), {
+         'script': "",
+         'args': "no array"})
+
+    assert_error(result, "invalid argument")
+
+
+# 15.2.1/2 Execute Script (Async)
+@pytest.mark.parametrize("executor", executors)
+def test_no_browsing_context(session, executor, create_window):
+    session.window_handle = create_window()
+    session.close()
+    # step 2
+    assert_error(executor(session, "return 1"), "no such window")
+
+
+prompts_types = ["alert", "confirm", "prompt"]
+
+def user_prompts_params(handler_list):
+    return map(lambda p: (execute_script, p), handler_list) + \
+           map(lambda p: (execute_async_script, p), handler_list)
+
+
+def unexpected_alert_with_prompt_type(session, executor, prompt_type):
+    create_dialog(session)(prompt_type, text=prompt_type + " #1", result_var= prompt_type +"1")
+    result = executor(session, "return 1")
+    assert_error(result, "unexpected alert open")
+    dismiss(session)
+
+user_prompt_handlers_error = ["dismiss and notify", "accept and notify", "ignore"]
+
+# 15.2.1/2 Execute Script (Async)
+@pytest.mark.parametrize("executor, handler_type", user_prompts_params(user_prompt_handlers_error))
+def test_user_prompts_errors(new_session, executor, handler_type):
+    _, session = new_session({"alwaysMatch": {"unhandledPromptBehavior": handler_type}})
+    session.url = inline("""<title>JS testing</title>""")
+    # step 3
+
+    for prompt_type in prompts_types:
+        unexpected_alert_with_prompt_type(session, executor, prompt_type)
+
+user_prompt_handlers_pass = ["dismiss", "accept"]
+
+# 15.2.1/2 Execute Script (Async)
+def expected_alert_with_prompt_type(session, executor, prompt_type):
+    create_dialog(session)(prompt_type, text=prompt_type + " #1", result_var= prompt_type +"1")
+    assert_success(executor(session, "return 1"), 1)
+    dismiss(session)
+
+
+@pytest.mark.parametrize("executor, handler_type", user_prompts_params(user_prompt_handlers_pass))
+def test_user_prompts_success(new_session, executor, handler_type):
+    _, session = new_session({"alwaysMatch": {"unhandledPromptBehavior": handler_type}})
+    session.url = inline("""<title>JS testing</title>""")
+    # step 3
+
+    for prompt_type in prompts_types:
+        expected_alert_with_prompt_type(session, executor, prompt_type)
 
 @pytest.mark.parametrize("executor", executors)
 def test_return_number(session, executor):
