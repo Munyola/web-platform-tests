@@ -19,7 +19,7 @@ errors = {
     "no such cookie": 404,
     "no such element": 404,
     "no such frame": 400,
-    "no such window": 400,
+    "no such window": 404,
     "script timeout": 408,
     "session not created": 500,
     "stale element reference": 400,
