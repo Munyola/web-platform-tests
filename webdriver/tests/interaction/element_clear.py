@@ -60,8 +60,8 @@ def test_disabled_element_not_resettable(session):
 
 
 def test_scroll_into_element_view(session):
-    # 14.2 Step 4
-    session.url = inline("<input type=text value=Federer><div style= \"height: 200vh; width: 5000vh\">")
+    # 14.1 Step 4
+    session.url = inline("<input type=text value=Federer><div style=\"height: 200vh; width: 5000vh\">")
 
     # Scroll to the bottom right of the page
     session.execute_script("window.scrollTo(document.body.scrollWidth, document.body.scrollHeight);")
@@ -71,19 +71,14 @@ def test_scroll_into_element_view(session):
     assert_success(response)
 
     # Check if element cleared is scrolled into view
-    rect = session.execute_script("return document.getElementsByTagName(\"input\")[0].getBoundingClientRect()")
-
-    pageDict = {}
-
-    pageDict["innerHeight"] = session.execute_script("return window.innerHeight")
-    pageDict["innerWidth"] = session.execute_script("return window.innerWidth")
-    pageDict["pageXOffset"] = session.execute_script("return window.pageXOffset")
-    pageDict["pageYOffset"] = session.execute_script("return window.pageYOffset")
-
-    assert rect["top"] < (pageDict["innerHeight"] + pageDict["pageYOffset"]) and \
-           rect["left"] < (pageDict["innerWidth"] + pageDict["pageXOffset"]) and \
-           (rect["top"] + element.rect["height"]) > pageDict["pageYOffset"] and \
-           (rect["left"] + element.rect["width"]) > pageDict["pageXOffset"]
+    response = session.execute_script("""rect = document.getElementsByTagName("input")[0].getBoundingClientRect();
+                                        xOffset = window.pageXOffset;
+                                        yOffset = window.pageYOffset;
+                                        return  rect["top"] < (window.innerHeight + yOffset) &&
+                                                rect["left"] < (window.innerWidth + xOffset) &&
+                                                (rect["top"] + rect["height"]) > yOffset &&
+                                                (rect["left"] + rect["width"]) > xOffset;""")
+    assert response is True
 
 
 # TODO
